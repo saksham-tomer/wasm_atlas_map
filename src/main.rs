@@ -1,16 +1,17 @@
 use std::fs;
-use wasm_bindgen::prelude::*;
+use std::fs::File;
+use std::io::Read;
+use image::*;
+// use wasm_bindgen::prelude::*;
 
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+// #[cfg(feature = "wee_alloc")]
+// #[global_allocator]
+// static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-#[wasm_bindgen]
-extern {
-    alert(
-        "Hello, from the rust crap from the bottom of the sea"
-    );
-}
+// #[wasm_bindgen]
+// extern {
+//     alert("Hello, from the rust crap from the bottom of the sea");
+// }
 
 struct CustomData<T> {
     input_data: Vec<T>,
@@ -50,8 +51,47 @@ fn main() -> std::io::Result<()> {
     //testing out the dir reading function
     for entry in fs::read_dir(".")? {
         let dir = entry?;
-        println!("{:?}", dir.path());
+        println!("{:?} \n", dir.path());
     }
+
+    let cat_image = image::open("download.jpg");
+    print!("Image width: {:?} \n", cat_image.unwrap().height());
+    let mut file_data = File::open("download.jpg")?;
+
+
+
+    let mut image_bmp = File::open("download.jpg")?;
+    let mut buffer:Vec<u8> = Vec::new();
+    image_bmp.read_to_end(&mut buffer)?;
+
+    if buffer.len() < 54{
+        eprint!("Not a BMP file, file too short \n");
+        return Ok(());
+    }
+
+    let width:u32 = u32::from_le_bytes(buffer[18..22].try_into().unwrap());
+    let height: u32 = u32::from_le_bytes(buffer[22..26].try_into().unwrap());
+
+    print!(" \n Image width: {:?}, Image height: {:?} \n", width, height);
+
+    // while let Some(byte) = file_data.bytes().next() {
+    //     match byte {
+    //         Ok(byte) => println!("{}", byte),
+    //         Err(_) => break,
+    //     }
+    // }
+
+    // while let Ok(byte) = file_data.metadata(){
+    //     println!("{:?}", byte);
+    // }
+
+
+    for byte in file_data.bytes() {
+        match byte {
+            Ok(byte) => fs::write("download_copy.jpg", vec![byte])?,
+            Err(_) => break,
+        }
+    };
 
     let mut cst_data = CustomData::<i32>::new();
     cst_data.init(&[1,4,6]);
@@ -69,9 +109,8 @@ fn main() -> std::io::Result<()> {
         Ok(_) => println!(
             "File created Successfully !!!!!!!",
         ),
-        Err(error) => println!("Error Creating File {:?}", error),
         _ => println!("Unknown Error")
     }
 
-    Ok(())
-}
+        Ok(())
+    }
